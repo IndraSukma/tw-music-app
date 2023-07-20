@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en" x-data :class="{ 'dark': $store.theme.active === 'dark' || $store.theme.active === 'auto' && $store.theme.preferDark }">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music App</title>
+    <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/satoshi" />
+    <link rel="stylesheet" href="dist/style.min.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+  <body class="select-none bg-white text-slate-950 dark:bg-slate-950 dark:text-white" x-data="global">
+    <!-- background -->
+    <div class="fixed h-screen w-full bg-cover bg-center bg-no-repeat opacity-50 blur-2xl" style="background-image: url('img/album/album-cover-1.jpg')"></div>
+
+    <!-- topnav -->
+    <header class="fixed top-0 z-30 hidden w-full md:block md:pl-24 lg:pl-60" x-bind="navbar">
+      <nav
+        class="relative px-8 py-5 before:absolute before:left-0 before:top-0 before:block before:h-full before:w-full before:transition-[background-color] before:duration-700"
+        :class="navbarAtTop || 'border-b border-white/30 dark:before:bg-white/10 before:bg-white/30 before:backdrop-blur-2xl'">
+        <ul class="relative flex w-full gap-4">
+          <li>
+            <button
+              type="button"
+              class="material-symbols-rounded rounded-full border border-white/20 bg-white/20 p-[0.188rem] text-3xl/none text-slate-950/70 hover:bg-white/30 hover:text-slate-950 active:bg-white/40 dark:text-white/70 dark:hover:text-white">
+              chevron_left
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              class="material-symbols-rounded cursor-not-allowed rounded-full border border-white/20 bg-white/10 p-[0.188rem] text-3xl/none text-slate-950/25 dark:text-white/25"
+              disabled>
+              chevron_right
+            </button>
+          </li>
+          <li class="w-1/2 transition-opacity duration-500" :class="navbarAtTop ? 'opacity-0 invisible' : 'visible opacity-100'">
+            <div class="flex items-center gap-4">
+              <button type="button" class="material-symbols-rounded icon-filled rounded-full bg-indigo-500 p-[0.438rem] text-2xl/none text-white hover:bg-indigo-600 active:bg-indigo-700">
+                play_arrow
+              </button>
+              <div class="truncate text-2xl font-black" x-text="album.title"></div>
+            </div>
+          </li>
+          <li class="ml-auto">
+            <div class="relative" x-data="dropdown">
+              <button type="button" class="rounded-full border border-white/20 bg-white/20 p-2 hover:bg-white/30 active:bg-white/40" x-bind="trigger">
+                <span class="material-symbols-rounded icon-filled block p-[1px] text-lg/none" x-text="$store.theme.activeIcon"></span>
+              </button>
+              <div class="absolute right-0 z-10 mt-2 w-36 rounded-xl border border-white/20 bg-white/20 py-2 backdrop-blur-xl dark:bg-white/10" x-bind="menu">
+                <ul>
+                  <template x-for="theme in $store.theme.list">
+                    <li>
+                      <a
+                        href="#"
+                        class="flex items-center gap-5 px-5 py-3"
+                        :class="$store.theme.active === theme.name ? 'bg-white/30' : 'hover:bg-white/20 active:bg-white/30'"
+                        @click.prevent="$store.theme.change(theme.name)"
+                        x-bind="trigger">
+                        <span class="material-symbols-rounded text-lg/none" :class="$store.theme.active === theme.name && 'icon-filled'" x-text="theme.icon"></span>
+                        <span class="text-sm font-medium capitalize dark:font-normal" x-text="theme.name"></span>
+                      </a>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div class="relative" x-data="dropdown">
+              <a href="#" x-bind="trigger">
+                <img src="img/avatar.jpg" alt="Avatar" class="h-[2.375rem] rounded-full" />
+              </a>
+              <div class="absolute right-0 z-10 mt-2 w-40 rounded-xl border border-white/20 bg-white/20 py-2 backdrop-blur-xl dark:bg-white/10" x-bind="menu">
+                <ul>
+                  <li>
+                    <a href="#" class="flex items-center gap-5 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                      <span class="material-symbols-rounded text-lg/none">account_circle</span>
+                      <span class="text-sm font-medium dark:font-normal">Profile</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                      <span class="material-symbols-rounded text-xl/none">settings</span>
+                      <span class="text-sm font-medium dark:font-normal">Settings</span>
+                    </a>
+                  </li>
+                  <li><hr class="my-2 border-white/30 dark:border-white/20" /></li>
+                  <li>
+                    <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                      <span class="material-symbols-rounded text-xl/none">logout</span>
+                      <span class="text-sm font-medium dark:font-normal">Log out</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- sidenav -->
+    <nav
+      class="fixed bottom-0 left-0 z-30 flex w-full flex-col overflow-auto border-t border-white/20 bg-white/20 backdrop-blur-3xl dark:bg-white/10 md:bottom-auto md:top-0 md:h-screen md:w-24 md:border-r md:border-t-0 lg:w-60">
+      <div class="flex h-full flex-col">
+        <ul class="flex w-full justify-evenly md:flex-col lg:pt-8">
+          <li class="hidden md:list-item">
+            <a href="#" class="flex justify-center gap-2 py-8 lg:mx-8 lg:mb-6 lg:w-fit lg:items-center lg:p-0">
+              <img
+                :src="$store.theme.active === 'dark' || $store.theme.active === 'auto' && $store.theme.preferDark ? 'img/logo-mark-light.png' : 'img/logo-mark-dark.png'"
+                alt="Music Logo Mark"
+                class="h-7" />
+              <img
+                :src="$store.theme.active === 'dark' || $store.theme.active === 'auto' && $store.theme.preferDark ? 'img/logo-text-light.png' : 'img/logo-text-dark.png'"
+                alt="Music Logo Text"
+                class="hidden h-5 lg:inline-block" />
+            </a>
+          </li>
+          <li>
+            <a href="#" class="flex flex-col items-center gap-1 p-[.625rem] opacity-70 hover:opacity-100 md:p-3 lg:flex-row lg:gap-3 lg:px-7">
+              <span class="material-symbols-rounded text-2xl/none">home</span>
+              <span class="text-xs font-medium dark:font-normal md:text-sm lg:text-lg">Home</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="flex flex-col items-center gap-1 p-[.625rem] opacity-70 hover:opacity-100 md:p-3 lg:flex-row lg:gap-3 lg:px-7">
+              <span class="material-symbols-rounded text-2xl/none">search</span>
+              <span class="text-xs font-medium dark:font-normal md:text-sm lg:text-lg">Search</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="flex flex-col items-center gap-1 p-[.625rem] opacity-70 hover:opacity-100 md:p-3 lg:flex-row lg:gap-3 lg:px-7">
+              <span class="material-symbols-rounded text-2xl/none">explore</span>
+              <span class="text-xs font-medium dark:font-normal md:text-sm lg:text-lg">Explore</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="flex flex-col items-center gap-1 p-[.625rem] opacity-70 hover:opacity-100 md:p-3 lg:flex-row lg:gap-3 lg:px-7">
+              <span class="material-symbols-rounded text-2xl/none">library_music</span>
+              <span class="text-xs font-medium dark:font-normal md:text-sm lg:text-lg">Library</span>
+            </a>
+          </li>
+          <li class="md:hidden">
+            <a href="#" class="flex flex-col items-center gap-1 p-[.625rem] opacity-70 hover:opacity-100 md:p-3 lg:flex-row lg:gap-3 lg:px-7">
+              <span class="material-symbols-rounded text-2xl/none">account_circle</span>
+              <span class="text-xs font-medium dark:font-normal md:text-sm lg:text-lg">Account</span>
+            </a>
+          </li>
+        </ul>
+        <ul class="mt-auto hidden md:block md:pb-4">
+          <li>
+            <a href="#" class="flex flex-col items-center gap-1 p-[.625rem] opacity-70 hover:opacity-100 md:p-3 lg:flex-row lg:gap-3 lg:px-7">
+              <span class="material-symbols-rounded text-2xl/none">download</span>
+              <span class="text-xs font-medium dark:font-normal md:text-sm lg:text-lg">Install App</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- main content -->
+    <main class="relative pb-36 md:pb-28 md:pl-24 lg:pb-32 lg:pl-60">
+      <div class="pb-6 pt-16 md:pb-8 md:pt-20">
+        <!-- content header -->
+        <div class="mb-6 px-6 md:flex md:items-end md:gap-8 md:px-8">
+          <img :src="album.image" :alt="`Album ${album.title}`" class="mx-auto mb-6 aspect-square w-2/4 rounded-3xl object-cover md:mb-2 md:w-1/4" />
+          <div class="md:flex-1">
+            <h1 class="line-clamp-2 text-3xl/snug font-black md:text-4xl/snug lg:text-6xl/snug" x-text="album.title"></h1>
+            <a href="#" class="my-2 flex w-fit items-center gap-3 md:mb-0 lg:mt-5">
+              <img :src="album.artist.image" :alt="album.artist.name" class="aspect-square w-6 rounded-full object-cover lg:w-8" />
+              <span class="text-base font-bold lg:text-lg" x-text="album.artist.name"></span>
+            </a>
+            <div class="md:flex md:items-center md:justify-between">
+              <div class="text-sm font-medium dark:font-normal">
+                <div class="mb-1" x-text="`Album • ${album.year}`"></div>
+                <div class="opacity-70" x-text="`${album.total_songs} Songs, ${album.total_duration}`"></div>
+              </div>
+              <div class="mt-2 flex items-center gap-4 md:flex-row-reverse">
+                <div class="flex gap-4">
+                  <button
+                    type="button"
+                    class="material-symbols-rounded rounded-full border border-white/20 bg-white/20 p-2 text-xl/none hover:bg-white/30 active:bg-white/40"
+                    :class="active ? 'icon-filled' : 'dark:text-white/70 text-slate-950/70 hover:text-slate-950 dark:hover:text-white'"
+                    x-data="btnToggle"
+                    x-bind="toggle">
+                    favorite
+                  </button>
+                  <div class="relative" x-data="dropdown">
+                    <button
+                      type="button"
+                      class="material-symbols-rounded rounded-full border border-white/20 bg-white/20 p-2 text-xl/none text-slate-950/70 hover:bg-white/30 hover:text-slate-950 active:bg-white/40 dark:text-white/70 dark:hover:text-white"
+                      x-bind="trigger">
+                      more_vert
+                    </button>
+                    <div class="absolute z-10 mt-2 w-48 rounded-xl border border-white/20 bg-white/20 py-2 backdrop-blur-xl dark:bg-white/10 md:right-0" x-bind="menu">
+                      <ul>
+                        <li>
+                          <a href="#" class="flex items-center gap-5 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                            <span class="material-symbols-rounded text-lg/none">favorite</span>
+                            <span class="text-sm font-medium dark:font-normal">Like</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                            <span class="material-symbols-rounded text-xl/none">playlist_play</span>
+                            <span class="text-sm font-medium dark:font-normal">Play next</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                            <span class="material-symbols-rounded text-xl/none">queue_music</span>
+                            <span class="text-sm font-medium dark:font-normal">Add to queue</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                            <span class="material-symbols-rounded text-xl/none">playlist_add</span>
+                            <span class="text-sm font-medium dark:font-normal">Add to playlist</span>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#" class="flex items-center gap-5 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                            <span class="material-symbols-rounded text-lg/none">share</span>
+                            <span class="text-sm font-medium dark:font-normal">Share</span>
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="material-symbols-rounded icon-filled ml-auto rounded-full bg-indigo-500 p-3 text-3xl/none text-white hover:bg-indigo-600 active:bg-indigo-700">
+                  play_arrow
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- songs -->
+        <div class="mb-8">
+          <h2 class="mx-6 mb-3 text-xl font-black md:mx-8 lg:text-2xl">Songs</h2>
+          <div class="flex flex-col md:gap-1 md:px-8">
+            <template x-for="(song, index) in album.songs">
+              <template x-if="songLimit === null || index < songLimit">
+                <div
+                  class="group flex items-center gap-3 px-6 py-3 md:rounded-2xl md:px-3"
+                  :class="songPlaying.id === song.id ? 'bg-white/30 dark:bg-white/20' : 'hover:bg-white/20 dark:hover:bg-white/10'"
+                  @dblclick="togglePlaySong(song.id)">
+                  <div class="w-9 text-center text-sm font-medium opacity-70 dark:font-normal" x-text="index + 1"></div>
+                  <div class="flex flex-1 items-center gap-3">
+                    <div class="relative h-11 w-11 overflow-hidden rounded-lg">
+                      <img :src="album.image" :alt="`Album ${album.name}`" class="aspect-square w-full object-cover" />
+                      <div
+                        class="material-symbols-rounded absolute top-0 flex h-full w-full items-center justify-center bg-slate-950/70 text-2xl/none text-white/90"
+                        x-show="songPlaying.id === song.id">
+                        volume_up
+                      </div>
+                    </div>
+                    <div class="flex-1">
+                      <a href="#" class="line-clamp-1 w-fit text-base font-bold" x-text="song.title"></a>
+                      <div class="line-clamp-1 w-fit text-sm font-medium dark:font-normal" x-html="mapArtist(song.artist)"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3 md:pr-2 lg:flex-row-reverse lg:pr-4">
+                    <div class="w-9 text-right text-sm font-medium opacity-70 dark:font-normal" x-text="song.duration"></div>
+                    <div class="relative" x-data="dropdown">
+                      <button
+                        type="button"
+                        class="material-symbols-rounded rounded-full p-1 text-xl/none text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white"
+                        :class="{ 'lg:invisible lg:group-hover:visible': songPlaying.id !== song.id }"
+                        x-bind="trigger">
+                        more_vert
+                      </button>
+                      <div class="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-white/20 bg-white/20 py-2 backdrop-blur-xl dark:bg-white/10" x-bind="menu">
+                        <ul>
+                          <li>
+                            <a href="#" class="flex items-center gap-5 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                              <span class="material-symbols-rounded text-lg/none">favorite</span>
+                              <span class="text-sm font-medium dark:font-normal">Like</span>
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                              <span class="material-symbols-rounded text-xl/none">playlist_play</span>
+                              <span class="text-sm font-medium dark:font-normal">Play next</span>
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                              <span class="material-symbols-rounded text-xl/none">queue_music</span>
+                              <span class="text-sm font-medium dark:font-normal">Add to queue</span>
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                              <span class="material-symbols-rounded text-xl/none">playlist_add</span>
+                              <span class="text-sm font-medium dark:font-normal">Add to playlist</span>
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="flex items-center gap-5 px-5 py-3 hover:bg-white/20 active:bg-white/30">
+                              <span class="material-symbols-rounded text-lg/none">share</span>
+                              <span class="text-sm font-medium dark:font-normal">Share</span>
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="material-symbols-rounded hidden rounded-full p-1 text-xl/none lg:block"
+                      :class="{ 
+                        'lg:invisible lg:group-hover:visible': songPlaying.id !== song.id && !song.isLiked,
+                        'text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white': !song.isLiked,
+                        'icon-filled': song.isLiked }"
+                      @click="toggleLikeSong(song.id)">
+                      favorite
+                    </button>
+                    <button
+                      type="button"
+                      class="material-symbols-rounded icon-filled hidden rounded-full p-1 text-2xl/none lg:block"
+                      :class="{ 'text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white lg:invisible lg:group-hover:visible': songPlaying.id !== song.id }"
+                      @click="togglePlaySong(song.id)"
+                      x-text="songPlaying.id === song.id && !songPaused ? 'pause' : 'play_arrow'"></button>
+                  </div>
+                </div>
+              </template>
+            </template>
+          </div>
+          <button type="button" class="mx-6 mt-2 text-sm font-bold opacity-70 hover:opacity-100 md:mx-8" x-bind="btnShowAllSongs"></button>
+        </div>
+
+        <!-- More from -->
+        <div class="mb-8" x-data="{ tab: 'single' }">
+          <h2 class="mx-6 text-xl font-black md:mx-8 lg:text-2xl">More from The Panturas</h2>
+          <div class="mx-6 mb-5 mt-3 flex gap-3 md:mx-8">
+            <button
+              type="button"
+              class="rounded-full border px-4 py-2 text-sm font-bold"
+              :class="tab === 'single' ? 'bg-white text-slate-950 border-white' : 'border-white/20 bg-white/20 text-slate-950/70 dark:text-white/70 hover:bg-white/30 hover:text-slate-950 dark:hover:text-white active:bg-white/40'"
+              @click="tab = 'single'">
+              Single
+            </button>
+            <button
+              type="button"
+              class="rounded-full border px-4 py-2 text-sm font-bold"
+              :class="tab === 'album' ? 'bg-white text-slate-950 border-white' : 'border-white/20 bg-white/20 text-slate-950/70 dark:text-white/70 hover:bg-white/30 hover:text-slate-950 dark:hover:text-white active:bg-white/40'"
+              @click="tab = 'album'">
+              Album
+            </button>
+          </div>
+          <div
+            class="flex overflow-x-auto px-3 transition-opacity duration-500 scrollbar-hide md:px-4 lg:flex-wrap"
+            x-show="tab === 'single'"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100">
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/single/single-tafsir-mistik.jpg" alt="Single Tafsir Mistik" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Tafsir Mistik</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Single • 2021</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/single/single-balada-semburan-naga.jpg" alt="Single Balada Semburan Naga" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Balada Semburan Naga</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Single • 2020</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/single/single-putra-petir.jpg" alt="Single Putra Petir" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Putra Petir</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Single • 2019</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/single/single-gelora.jpg" alt="Single Gelora" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Gelora</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Single • 2019</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/single/single-queen-of-the-south.jpg" alt="Single Queen of The South" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Queen of The South</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Single • 2018</div>
+            </div>
+          </div>
+          <div
+            class="flex overflow-x-auto px-3 transition-opacity duration-500 scrollbar-hide md:px-4 lg:flex-wrap"
+            x-show="tab === 'album'"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100">
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/album/album-cover-2.jpg" alt="Album Mabuk Laut" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Mabuk Laut</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Album • 2018</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- You might also like -->
+        <div>
+          <div class="mb-5 flex items-end justify-between">
+            <h2 class="mx-6 text-xl font-black md:mx-8 lg:text-2xl">You might also like</h2>
+            <button type="button" class="mx-6 mt-2 flex items-center text-sm font-bold text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white md:mx-8">
+              Show more
+              <span class="material-symbols-rounded">chevron_right</span>
+            </button>
+          </div>
+          <div class="flex overflow-x-auto px-3 scrollbar-hide md:px-4 lg:flex-wrap">
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/artist/artist-fourtwnty.jpg" alt="Artist Fourtwnty" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Fourtwnty</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Artist</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/artist/artist-danilla.jpg" alt="Artist Danilla" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Danilla</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Artist</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/artist/artist-reality-club.jpg" alt="Artist Reality Club" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Reality Club</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Artist</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/artist/artist-kunto-aji.jpg" alt="Artist Kunto Aji" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Kunto Aji</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Artist</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/artist/artist-white-shoes-and-the-couples-company.jpg" alt="Artist White Shoes & The Couples Company" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">White Shoes & The Couples Company</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Artist</div>
+            </div>
+            <div class="w-2/5 flex-none px-3 md:w-[24%] md:px-4 lg:w-1/6">
+              <a href="#" class="mb-2 flex overflow-hidden rounded-2xl md:rounded-3xl">
+                <img src="img/artist/artist-yura-yunita.jpg" alt="Artist Yura Yunita" class="aspect-square object-cover" />
+              </a>
+              <a href="#" class="block truncate text-base font-bold">Yura Yunita</a>
+              <div class="text-sm font-medium opacity-70 dark:font-normal">Artist</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- music player -->
+    <div class="fixed bottom-0 z-20 w-full pb-16 md:pb-8 md:pl-32 md:pr-8 lg:pl-[17rem]">
+      <div class="relative flex w-full justify-between gap-3 border-t border-white/20 bg-white/30 p-4 backdrop-blur-2xl dark:bg-white/10 md:rounded-3xl md:border lg:h-24 lg:gap-20">
+        <div class="flex w-full items-center gap-3 lg:w-1/4">
+          <img :src="album.image" :alt="`Album ${album.title}`" class="aspect-square w-12 rounded-lg object-cover lg:w-16 lg:rounded-xl" />
+          <div>
+            <a href="#" class="line-clamp-1 text-base font-bold" x-text="songPlaying.title"></a>
+            <div class="line-clamp-1 w-fit text-sm font-medium dark:font-normal" x-html="mapArtist(songPlaying.artist)"></div>
+          </div>
+        </div>
+        <div class="flex items-center lg:flex-1 lg:flex-col lg:justify-between">
+          <div class="flex w-full items-center gap-2">
+            <button
+              type="button"
+              class="material-symbols-rounded hidden rounded-full p-1 text-xl/none md:block lg:order-2"
+              :class="active || 'text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white'"
+              x-data="btnToggle"
+              x-bind="toggle">
+              shuffle
+            </button>
+            <button
+              type="button"
+              class="material-symbols-rounded hidden rounded-full p-1 text-xl/none md:block lg:order-4"
+              :class="currentState === states[0] && 'text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white'"
+              x-data="toggleRepeat"
+              x-bind="trigger"></button>
+            <div class="flex items-center gap-2 px-2 lg:order-3">
+              <button type="button" class="material-symbols-rounded icon-filled rounded-full p-1 text-2xl/none">skip_previous</button>
+              <button
+                type="button"
+                class="material-symbols-rounded icon-filled rounded-full p-1 text-3xl/none"
+                @click="togglePlaySong(songPlaying.id)"
+                x-text="!songPaused ? 'pause' : 'play_arrow'"></button>
+              <button type="button" class="material-symbols-rounded icon-filled rounded-full p-1 text-2xl/none">skip_next</button>
+            </div>
+            <button
+              type="button"
+              class="material-symbols-rounded mr-auto hidden rounded-full p-1 text-xl/none lg:order-1 lg:block"
+              :class="songPlaying.isLiked ? 'icon-filled' : 'text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white'"
+              @click="toggleLikeSong(songPlaying.id)">
+              favorite
+            </button>
+            <button
+              type="button"
+              class="material-symbols-rounded ml-auto hidden rounded-full p-1 text-xl/none text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white lg:order-5 lg:block">
+              more_vert
+            </button>
+          </div>
+          <div class="hidden lg:flex lg:w-full lg:items-center lg:gap-3">
+            <span class="w-7 text-xs font-bold text-slate-950/70 dark:text-white/70">0:40</span>
+            <div class="h-1 flex-1 rounded-full bg-white/80">
+              <div class="h-1 w-1/4 rounded-full bg-indigo-500"></div>
+            </div>
+            <span class="w-7 text-xs font-bold text-slate-950/70 dark:text-white/70" x-text="songPlaying.duration"></span>
+          </div>
+        </div>
+        <div class="hidden pr-2 md:flex md:items-center md:gap-2 lg:w-1/6">
+          <button
+            type="button"
+            class="material-symbols-rounded rounded-full p-1 text-xl/none"
+            :class="active || 'text-slate-950/70 hover:text-slate-950 dark:text-white/70 dark:hover:text-white'"
+            x-data="btnToggle"
+            x-bind="toggle">
+            lyrics
+          </button>
+          <div class="flex flex-1 items-center gap-2" x-data="btnToggle(true)">
+            <button type="button" class="material-symbols-rounded rounded-full p-1 text-xl/none" x-bind="toggle" x-text="active ? 'volume_up' : 'volume_off'"></button>
+            <div class="hidden h-1 flex-1 rounded-full bg-white/80 lg:block">
+              <div class="h-1 w-3/4 rounded-full bg-indigo-500" :class="active || 'hidden'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    document.addEventListener("alpine:init", () => {
+      Alpine.store("theme", {
+        init() {
+          const theme = localStorage.getItem("theme")
+          const preference = window.matchMedia("(prefers-color-scheme: dark)")
+
+          if (theme) {
+            this.active = theme
+            this.activeIcon = localStorage.getItem("themeIcon")
+          } else {
+            localStorage.setItem("theme", this.list[0].name)
+            localStorage.setItem("themeIcon", this.list[0].icon)
+            this.active = localStorage.getItem("theme")
+            this.activeIcon = localStorage.getItem("themeIcon")
+          }
+
+          this.preferDark = preference.matches
+          preference.addEventListener("change", (e) => (this.preferDark = e.matches))
+        },
+
+        preferDark: false,
+        active: "light",
+        activeIcon: "light_mode",
+        list: [
+          { name: "light", icon: "light_mode" },
+          { name: "dark", icon: "dark_mode" },
+          { name: "auto", icon: "auto_mode" },
+        ],
+
+        change(theme = "light") {
+          const themeIcon = this.list.find((item) => item.name === theme).icon
+
+          this.active = theme
+          this.activeIcon = themeIcon
+          localStorage.setItem("theme", theme)
+          localStorage.setItem("themeIcon", themeIcon)
+        },
+      })
+      Alpine.data("global", () => ({
+        navbarAtTop: window.pageYOffset < 100,
+        navbar: {
+          ["@scroll.window"]() {
+            this.navbarAtTop = window.pageYOffset < 100
+          },
+        },
+
+        songLimit: 5,
+        songExpand: false,
+        songPaused: false,
+        songPlaying: {
+          id: 1,
+          title: "Area Lepas Pantai",
+          duration: "2:49",
+          artist: ["The Panturas"],
+          isLiked: false,
+        },
+        album: {
+          title: "Ombak Banyu Asmara",
+          image: "img/album/album-cover-1.jpg",
+          year: 2021,
+          total_songs: 10,
+          total_duration: "33min 3sec",
+          artist: {
+            name: "The Panturas",
+            image: "img/artist/artist-the-panturas.jpg",
+          },
+          songs: [
+            {
+              id: 1,
+              title: "Area Lepas Pantai",
+              duration: "2:49",
+              artist: ["The Panturas"],
+              isLiked: false,
+            },
+            {
+              id: 2,
+              title: "Tipu Daya",
+              duration: "2:32",
+              artist: ["The Panturas"],
+              isLiked: true,
+            },
+            {
+              id: 3,
+              title: "Tafsir Mistik",
+              duration: "4:08",
+              artist: ["The Panturas"],
+              isLiked: false,
+            },
+            {
+              id: 4,
+              title: "Jim Labrador",
+              duration: "4:00",
+              artist: ["The Panturas"],
+              isLiked: false,
+            },
+            {
+              id: 5,
+              title: "Menuju Palung Terdalam",
+              duration: "3:44",
+              artist: ["The Panturas"],
+              isLiked: false,
+            },
+            {
+              id: 6,
+              title: "Balada Semburan Naga",
+              duration: "4:07",
+              artist: ["The Panturas", "Adipati 'The Kuda'"],
+              isLiked: false,
+            },
+            {
+              id: 7,
+              title: "All I Want",
+              duration: "2:41",
+              artist: ["The Panturas"],
+              isLiked: false,
+            },
+            {
+              id: 8,
+              title: "Intana",
+              duration: "2:14",
+              artist: ["The Panturas"],
+              isLiked: true,
+            },
+            {
+              id: 9,
+              title: "Masalembo",
+              duration: "3:19",
+              artist: ["The Panturas", "Nesia Ardi"],
+              isLiked: false,
+            },
+            {
+              id: 10,
+              title: "Ombak Banyu Asmara",
+              duration: "3:26",
+              artist: ["The Panturas"],
+              isLiked: false,
+            },
+          ],
+        },
+        mapArtist(artists = []) {
+          return artists.map((artist) => `<a href="#" class="opacity-70 hover:opacity-100">${artist}</a>`).join(", ")
+        },
+        togglePlaySong(id = null) {
+          if (this.songPlaying.id === id && !this.songPaused) {
+            this.songPaused = true
+          } else {
+            this.songPlaying = this.album.songs.find((song) => song.id === id)
+            this.songPaused = false
+          }
+        },
+        toggleLikeSong(id = null) {
+          const songs = this.album.songs
+          const index = songs.findIndex((song) => song.id === id)
+
+          songs[index].isLiked = !songs[index].isLiked
+          if (id === this.songPlaying.id) {
+            this.songPlaying = songs[index]
+          }
+        },
+
+        btnShowAllSongs: {
+          ["@click"]() {
+            this.songExpand = !this.songExpand
+            this.songLimit = this.songExpand === true ? null : 5
+          },
+          ["x-text"]() {
+            return this.songExpand === true ? "Show less" : "Show more"
+          },
+        },
+      }))
+      Alpine.data("dropdown", () => ({
+        open: false,
+
+        trigger: {
+          ["@click.prevent"]() {
+            this.open = !this.open
+          },
+        },
+
+        menu: {
+          ["x-show"]() {
+            return this.open
+          },
+          ["@click.outside"]() {
+            this.open = false
+          },
+        },
+      }))
+      Alpine.data("btnToggle", (initialActiveState = false) => ({
+        active: initialActiveState,
+
+        toggle: {
+          ["@click"]() {
+            this.active = !this.active
+          },
+        },
+      }))
+      Alpine.data("toggleRepeat", () => ({
+        states: ["repeat-off", "repeat-all", "repeat-one"],
+        currentState: "repeat-off",
+        nextState: "repeat-all",
+
+        trigger: {
+          ["@click"]() {
+            if (this.currentState === this.states[0]) {
+              this.currentState = this.states[1]
+              this.nextState = this.states[2]
+            } else if (this.currentState === this.states[1]) {
+              this.currentState = this.states[2]
+              this.nextState = this.states[0]
+            } else {
+              this.currentState = this.states[0]
+              this.nextState = this.states[1]
+            }
+          },
+          ["x-text"]() {
+            return this.currentState === this.states[2] ? "repeat_one" : "repeat"
+          },
+        },
+      }))
+    })
+  </script>
+</html>
