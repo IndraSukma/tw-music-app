@@ -1,5 +1,7 @@
 # tw-music-app
 
+Music App built with TailwindCSS and AlpineJS
+
 [Preview](https://indrasukma.github.io/tw-music-app/)
 
 ## Installation
